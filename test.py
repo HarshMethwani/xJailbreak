@@ -16,7 +16,8 @@ warnings.filterwarnings('ignore')
 
 parser = argparse.ArgumentParser(description='Test agent')
 parser.add_argument('-n', '--note', default='None', type=str, help='task note')
-parser.add_argument('--special_place', default='val', help='Customize special storage locations, logs/special_place/...')
+parser.add_argument('--special_place', default='val', help='Customize special saving location of experiment result, such as "logs/special_place/..."')
+parser.add_argument('--weight_path', type=str, help='your RL agent model file, such as "logs/train/ckpt/42_PPO_linux.pt..."')
 parser.add_argument('-t', '--target', default='qwen', help='target model, qwen, llama, gpt')
 parser.add_argument('-w', '--save', default=0, type=int, help='data saving type, 0: not saved, 1: local')
 parser.add_argument('-c', '--cuda', nargs='+', default=[0], type=int, help='CUDA order')
@@ -91,7 +92,7 @@ eps = 0.2
 policy_net = PolicyNet(state_dim, hidden_dim, action_dim)
 value_net = ValueNet(state_dim, hidden_dim)
 
-agent = torch.load('logs/sensitivity/alpha_0.2/ckpt/42_PPO_linux.pt')
+agent = torch.load(args.weight_path)
 
 evaluator = Evaluator(args.special_place, print_info=False)
 
