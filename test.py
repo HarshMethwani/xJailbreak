@@ -43,8 +43,12 @@ train_kwargs['val_num'] = 3  # How many samples should be tested per validation
 train_kwargs['val_max_step'] = 10  # How many times to iterate when verifying each sample
 
 # * ------ model ------
-# Helper models must be able to override safety instructions
-helpLLM = Llm({'name': 'Llama3-8B-Instruct-JB', 'source': 'local', 'cuda': args.cuda})  # 不要随便改这个模型
+# Helper models must be able to override safety instructions, highly recommend https://huggingface.co/cooperleong00/Meta-Llama-3-8B-Instruct-Jailbroken
+helper_api = {
+    'model_name': 'Meta-Llama-3-8B-Instruct-Jailbroken',
+    'model_path': 'huggingface/hub/llama/Meta-Llama-3-8B-Instruct-Jailbroken/'
+}
+helpLLM = Llm(helper_api)
 helpLLM.load_model()
 
 
@@ -57,11 +61,21 @@ env_kwargs['benign_emb_refer'] = torch.load('data/preload/benign_emb_refer.pt').
 
 # VictimLLM must be safety aligned
 if args.target == 'qwen':
-    victimLLM = Llm({'name': 'Qwen2.5-7B-Instruct', 'source': 'local'})
+    victim_api = {'model_name': 'qwen',
+                  'api': 'sk-2233...',
+                  'url': 'https:// ...'}
+    victimLLM = Llm(victim_api)
 elif args.target == 'llama':
-    victimLLM = Llm({'name': 'Llama3.1-8B-Instruct', 'source': 'local'})
+    victim_api = {
+        'model_name': 'llama',
+        'model_path': 'huggingface/hub/llama/'
+    }
+    victimLLM = Llm(victim_api)
 elif args.target == 'gpt':
-    victimLLM = Llm({'name': 'gpt-4o-mini', 'source': 'api'})
+    victim_api = {'model_name': 'gpt',
+                  'api': 'sk-2233...',
+                  'url': 'https:// ...'}
+    victimLLM = Llm(victim_api)
 victimLLM.load_model()
 
 

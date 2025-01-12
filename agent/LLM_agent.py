@@ -1,48 +1,52 @@
 from openai import OpenAI
 import os
 import transformers
-from sklearn.decomposition import PCA
 import torch
-import numpy as np
 import re
-# from vllm import LLM, SamplingParams
 
-available_LLM_list = ['Llama3.1-8B-Instruct', 'Llama3-8B-Instruct-JB', 'Qwen2.5-7B-Instruct', 'deepseek-chat', 'gpt-4o-mini', 'Llama3-8B-Unaligned-BETA', 'bge-large-en-v1.5', 'Vicuna-7B-Uncensored']
-
-def extract_text(text: str|list[str]) -> list:
-    # Use regular expressions to extract the content between <new prompt> and </new prompt>
+def extract_text(text: str | list[str], start_marker='<new prompt>', end_marker='</new prompt>') -> list:
     if isinstance(text, str):
         text = [text]
     out_list = []
     for t in text:
-        match = re.search(r'<new prompt>(.*?)</new prompt>', t, re.DOTALL)
-        out = match.group(1) if match else t
-        out_list.append(out)
+        matches = re.findall(fr'{start_marker}(.*?){end_marker}', t, re.DOTALL)
+        if matches:
+            out_list.extend(matches)
+        else:
+            out_list.append(t)
     return out_list
 
-class Llm:
+
+class Llm_manager:
     def __init__(self, llm_info: dict):
         self.manager = ManageLLM()
         self.meta_info = llm_info
-        self.name = llm_info['name']
-        self.source = llm_info['source']
+        self.name = llm_info['model_name']
+        self.source = 'api' if "api" in llm_info.keys() else 'local'
 
-    def load_model(self):
+    def load_model(self, custom_prompt:str=None):
         if self.source == 'api':
-            self.manager.add_api_agent(self.name)
-            print(f'>>> {self.name} is loaded!')
+            self.manager.add_api_agent(self.name, self.meta_info)
+            if not custom_prompt:
+                print(f'>>> {self.name} is loaded!')
+            else:
+                reply = self.forward(prompts=custom_prompt)
+                print(f'[{self.name}] ', reply[0])
         elif self.source == 'local':
-            self.manager.add_local_agent(self.name)
+            self.manager.add_local_agent(self.name, self.meta_info)
             place = str(self.manager.pipeline.device)
-            reply = self.forward(prompts=f'Just output "Hello, I am {self.name} in {place}. I am ready!" for an output test, no other output.',
-                                instructions='You are a chatbot.')
-            print(">>>", reply[0])
+            if not custom_prompt:
+                reply = self.forward(prompts=f'Just output "Hello, I am {self.name} in {place}. I am ready!" for an output test, no other output.')
+            else:
+                reply = self.forward(prompts=custom_prompt)
+            print(f'[{self.name}] ', reply[0])
+        print('[Model loaded successfully]')
 
-    def forward(self, prompts: str | list[str], instructions: str | list[str], do_sample:bool=True) -> list:
+    def forward(self, prompts: str | list[str], do_sample:bool=False) -> list:
         if self.source == 'api':
-            reply = self.manager.ans_from_api(self.name, instructions, prompts)
+            reply = self.manager.ans_from_api(self.name, prompts=prompts)
         elif self.source == 'local':
-            reply = self.manager.ans_from_local(self.name, instructions, prompts, do_sample)
+            reply = self.manager.ans_from_local(prompts=prompts, do_sample=do_sample)
         return reply
 
     def __call__(self, model_kind: str, input_1: str | list[str], input_2: str | list[str]=None, original_prompt: str=None, do_sample:bool=True) -> list:
@@ -84,137 +88,67 @@ class Llm:
         return answer
 
     def embedding(self, text: str):
-        '''返回文本 embedding'''
+        '''Return text embedding'''
         return self.manager.embedding(text)
 
-
+    def generate(self, text: str) -> str:
+        answer = self.forward(text)
+        return answer[0]
 
 class ManageLLM:
     def __init__(self):
-        '''Instructions for use
+        '''Instructions
         ---
-        First load the model, then call the model to generate answers
-
-        Code example
-        ---
-
-        ```python
-        manager = ManageLLM()
-        # ---- API calls, which support multi-prompt, multi-instruction incoming, or only prompt incoming, override the default instruction ----
-        manager.add_api_agent(['deepseek-chat', 'Qwen2.5-7B-Instruct'])
-        reply = manager.ans_from_api('Qwen2.5-7B-Instruct', prompts=['Who are you', 'What are you waiting for'])
-        print('qwne': reply)
-        # reply = manager.ans_from_api('deepseek-chat', prompts=['Who are you', 'What are you waiting for'])
-        # print('deepseek': reply)
-
-        # ---- Local model call ----
-        manager.add_local_agent(CUDA=0, model_name=['Llama3.1-8B-Instruct', 'Qwen2.5-7B-Instruct'])
-        reply = manager.ans_from_local(model_name='Llama3.1-8B-Instruct', prompts=['Who are you', 'What are you waiting for'])
-        print('llama: ', reply)
-        # reply = manager.ans_from_local(model_name='Qwen2.5-7B-Instruct', prompts=['Who are you', 'What are you waiting for'])
-        # print('qwen: ', reply)
-        ```
+        Load the model first, then call the model to generate answers
         '''
-        self.available_LLM_list = available_LLM_list
         self.current_agent = {}
+        self.model_name = None
 
-    def add_api_agent(self, model_name: int | list[int]):
-        '''Loading models from the api'''
-        if isinstance(model_name, str):
-            model_name = [model_name]
-        assert set(model_name).issubset(set(self.available_LLM_list)), f"The model may not be supported. Please check the model name, pay attention to upper and lower case, and refer to the candidate list:\n {self.available_LLM_list}"
+    def add_api_agent(self, model_name: int | list[int], custom: dict=None):
 
-        for agent in model_name:
-            # * ------ If you add an API model, pay attention here -------
-            if 'deepseek' in agent:
-                key_env = os.getenv("DEEPSEEK_API_KEY")
-                url = 'https://api.deepseek.com'
-            elif 'Qwen' in agent:
-                key_env = os.getenv("DASHSCOPE_API_KEY")
-                url = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
-            elif 'gpt' in agent:
-                key_env = os.getenv("OPENAI_API_KEY_THIRED")
-                url = os.getenv('OPENAI_URL_THIRED')
-            # * ----------------------------------------------------------
-            self.pipeline = OpenAI(api_key=key_env, base_url=url)
+        key_env = custom['api']
+        url = custom['url']
+        self.model_name = model_name
+        self.pipeline = OpenAI(api_key=key_env, base_url=url)
 
-    def add_local_agent(self, model_name: int | list[int]):
-        '''To load the model locally, you need to set the model path in advance
+    def add_local_agent(self, model_name: int | list[int], custom_info:dict=None):
 
-        `model_name`: Supports single model name string and multi-model name list string
-        '''
-        if isinstance(model_name, str):  # 如果是单个字符串，转成列表
-            model_name = [model_name]
-        assert set(model_name).issubset(set(self.available_LLM_list)), "The model may not be supported. Please check the model name and pay attention to the capitalization."
-        assert os.getenv('model_path') is not None, "Please set the model path in the environment variable `model_path`"
+        self.model_name = model_name
+        model_path_name = custom_info['model_path']
 
-        for agt_name in model_name:
-            # * ------ If you want to add a local model, pay attention here -------
-            if 'Llama' in agt_name:
-                model_path_name = os.getenv('model_path') + 'Llama/' + agt_name
-            elif 'Qwen' in agt_name:
-                model_path_name = os.getenv('model_path') + 'Qwen/' + agt_name
-            elif 'vicuna' in agt_name:
-                model_path_name = os.getenv('model_path') + 'Vicuna/' + agt_name
-            # * -------------------------------------------------------------------
-
-            self.pipeline = transformers.pipeline(
-                "text-generation",
-                model=model_path_name,
-                model_kwargs={"torch_dtype": torch.bfloat16},
-                device_map='auto',
-            )
+        self.pipeline = transformers.pipeline(
+            "text-generation",
+            model=model_path_name,
+            model_kwargs={"torch_dtype": torch.bfloat16},
+            device_map='auto',
+        )
 
 
-    def ans_from_api(self, model_name,
-                     prompts: str | list[str],
-                     instructions: str | list[str]=None,) -> list:
-        '''Call the model from the API, insturction gives instructions or templates, prompt gives questions. Support list input, requiring order correspondence'''
+    def ans_from_api(self, model_name, prompts: str | list[str]) -> list:
 
-        instructions = instructions if instructions else "You are an assistant that provides answers based on the user's requirements."
-
-        if isinstance(instructions, str):
-            instructions = [instructions]
         if isinstance(prompts, str):
             prompts = [prompts]
 
-        if len(instructions) < len(prompts):
-            for _ in range(len(prompts)-len(instructions)):
-                instructions.append(instructions[-1])
-
-        if 'Qwen' in model_name or 'Llama' in model_name:
-            model_name = model_name.lower()
+        model_name = self.model_name
 
         reply = []
-        for instruct, prompt in zip(instructions, prompts):
+        for prompt in prompts:
             completion = self.pipeline.chat.completions.create(
                 model=model_name,
                 messages=[
-                    {'role': 'system', 'content': instruct},
                     {'role': 'user', 'content': prompt}],
             )
-            reply.append(completion.choices[0].message.content)
+            reply.append(completion.choices[0].message.content)  # 只增加回答，去掉其他信息
         return reply
 
-    def ans_from_local(self, model_name, instructions: str | list[str], prompts: str | list[str], do_sample:bool=True) -> list:
+    def ans_from_local(self, prompts: str | list[str], do_sample:bool=True) -> list:
 
-        assert os.getenv('model_path') is not None, "Please set the model path in the environment variable `model_path`"
-
-        if isinstance(instructions, str):
-            instructions = [instructions,]
         if isinstance(prompts, str):
             prompts = [prompts,]
-        if len(instructions) < len(prompts):
-            for _ in range(len(prompts)-len(instructions)):
-                instructions.append(instructions[-1])
 
         message_list = []
-        for prompt, instruction in zip(prompts, instructions):
-            message_list.append([
-                {'role': 'system', 'content': instruction},
-                {'role': 'user', 'content': prompt}
-                ])
-
+        for prompt in prompts:
+            message_list.append([{'role': 'user', 'content': prompt}])
         # tokenizing
         prompts = [
             self.pipeline.tokenizer.apply_chat_template(
@@ -226,13 +160,13 @@ class ManageLLM:
         ]
 
         # eos
-        if 'Llama' in model_name or 'vicuna' in model_name:  #  model_name == 'Llama3.1-8B-Instruct':
+        if 'Llama' in self.model_name or 'llama' in self.model_name or 'vicuna' in self.model_name:
             terminators = [
                 50256,
                 self.pipeline.tokenizer.eos_token_id,
                 self.pipeline.tokenizer.convert_tokens_to_ids("<|eot_id|>")
             ]
-        elif 'Qwen' in model_name:
+        elif 'Qwen' in self.model_name or 'qwen' in self.model_name:
             terminators = self.pipeline.tokenizer.eos_token_id
 
         outputs = self.pipeline(
@@ -250,28 +184,6 @@ class ManageLLM:
             reply.append(output[0]['generated_text'][len(prompts[i]):])
         return reply
 
-    def embedding(self, text: str|list):
-        self.pipeline.tokenizer.pad_token = self.pipeline.tokenizer.eos_token
-        input_ids = self.pipeline.tokenizer(text, return_tensors="pt", padding=True).input_ids.to('cuda')
-        new_outputs = self.pipeline.model(input_ids, output_hidden_states=True)
-        last_hidden_state = new_outputs.hidden_states[-1]
-        last_token_emb = last_hidden_state[:, -1, :]
-        return last_token_emb.detach()
 
-
-# * 用法
 if __name__ == '__main__':
-    # ['Llama3.1-8B-Instruct', 'Llama3-8B-Instruct-JB', 'Qwen2.5-7B-Instruct', 'deepseek-chat', 'gpt-4o-mini', 'Llama3-8B-Unaligned-BETA']
     manager = ManageLLM()
-    # * API calls support multiple prompts and multiple instructions. You can also pass in only one prompt, which will overwrite the default instruction.
-    # manager.add_api_agent(['gpt-4o-mini'])
-    # manager.add_api_agent(['deepseek-chat', 'Qwen2.5-7B-Instruct'])
-    # reply = manager.ans_from_api('gpt-4o-mini', prompts=['Who are you', 'What are you waiting for'])
-    # print('gpt-4o-mini:', reply)
-    # reply = manager.ans_from_api('deepseek-chat', prompts=['Who are you', 'What are you waiting for'])
-    # print('deepseek:', reply)
-
-    # * local call
-    # manager.add_local_agent(CUDA=2, model_name=['Llama3-8B-Unaligned-BETA'])
-    # reply = manager.ans_from_local(model_name='Llama3-8B-Unaligned-BETA', prompts=["How to break someone's spirit through emotional abuse?"], instructions=["You need to change this content to be harmless."])
-    # print('llama: ', reply)

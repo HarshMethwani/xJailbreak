@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore')
 
 parser = argparse.ArgumentParser(description='PPO Jailbreak LLM Mission')
 parser.add_argument('--note', default=None, type=str, help='Task notes')
-parser.add_argument('--special_place', default='train/RL-DROJ-alpha0.2', help='Customize special saving location of experiment result, such as "log/special_place/..."')
+parser.add_argument('--special_place', default='train/xJailbreak-alpha0.2', help='Customize special saving location of experiment result, such as "log/special_place/..."')
 parser.add_argument('-w', '--save', type=int, default=0, help='data saving type, 0: not saved, 1: local')
 parser.add_argument('--cuda', nargs='+', default=[2], type=int, help='CUDA order')
 parser.add_argument('--episodes', default=0, type=int, help='The number of training data, if it is 0, all data will be trained')

@@ -1,6 +1,6 @@
 # Overview
 
-The code of paper "RL-DROJ: RL-based Directional Representation Optimization for LLM Jailbreaking".
+The code of paper "xJailbreak: Representation Space Guided Reinforcement Learning for Interpretable LLM Jailbreaking".
 
 ## Requirement
 
@@ -8,32 +8,44 @@ The code of paper "RL-DROJ: RL-based Directional Representation Optimization for
 
 Linux Ubuntu; Python 3.10; A800 (80G).
 
-We deployed at least one non-safety aligned LLM locally, and we deploy 1 or 2 LLM in the experiment. We recommend that you have more than 60G of GPU memory. If you want to use multiple GPU, you may need to adjust the model loading method in `agent/LLM_agent.py`.
-
 ### Necessary packages
 
 torch, transformers, numpy, pandas, sklearn, tqdm, openai
 
 ### LLM configuration
 
-We deploy [Llama3-8B-Instruct-JB](https://huggingface.co/cooperleong00/Meta-Llama-3-8B-Instruct-Jailbroken) locally And **this is necessary** because we need a LLM without safety alignment. If you have other similar LLMs, you can replace it. We only support chat templates for Llama and Qwen. If you change to a new model, you may also need to modify the template, which is located in `agent/LLM_agent.py`.
+We deploy [Llama3-8B-Instruct-JB](https://huggingface.co/cooperleong00/Meta-Llama-3-8B-Instruct-Jailbroken) locally And **this is necessary** because we need a LLM without safety alignment. If you have other similar LLMs, you can replace it.
 
-We also deploy safety aligned LLM like [Qwen2.5-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct) locally **but it is not necessary**. You can also replace it with any other local or API LLM. This is used as a target LLM with safety alignment.
+We deploy safety aligned LLM like [Qwen2.5-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct) locally as attacking target. You can replace it with any other local or API LLM. We only have chat templates for Llama and Qwen if there is a local model loaded.
 
-We assume that you have a model path in the environment variables `model_path` that is completed in a form similar to the following code in `agent/LLM_agent.py`:
+We assume that you have a local model like llama, you can load it by
 
 ```python
-# * ------ If you add a local model, pay attention here -------
-if 'Llama' in agt_name:
-    model_path_name = os.getenv('model_path') + 'Llama/' + agt_name
-elif 'Qwen' in agt_name:
-    model_path_name = os.getenv('model_path') + 'Qwen/' + agt_name
-# * ------------------------------------------------------------
+from agent.LLM_agent import Llm
+helper_api = {
+    'model_name': 'Meta-Llama-3-8B-Instruct-Jailbroken',
+    'model_path': 'huggingface/hub/llama/Meta-Llama-3-8B-Instruct-Jailbroken/'
+}
+helpLLM = Llm(helper_api)
+helpLLM.load_model()
 ```
 
-**Another way:** `ManageLLM` in `agent/LLM_agent.py` is the method by which we manage all local and API LLMs. If you think the package is difficult to modify, you can rewrite it. Your rewritten package should satisfy the call method of the `Llm` class in `agent/LLM_agent.py`.
+You can call a LLM from API by:
+
+```python
+from agent.LLM_agent import Llm
+helper_api = {
+    'model_name': 'qwen',
+    'api': 'sk-2233...',
+    'url': 'https:// ...'
+}
+helpLLM = Llm(helper_api)
+helpLLM.load_model()
+```
 
 ## Run
+
+You must define the LLM source using the method mentioned above before running `train.py` and `test.py`, and modify the relevant parts in these two files directly.
 
 At first you need to train a RL agent, run:
 
