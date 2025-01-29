@@ -4,7 +4,7 @@ The code of paper "xJailbreak: Representation Space Guided Reinforcement Learnin
 
 ## Requirement
 
-### Enviroment
+### Environment
 
 Linux Ubuntu; Python 3.10; A800 (80G).
 
