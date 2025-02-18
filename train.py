@@ -51,7 +51,7 @@ helpLLM = Llm_manager({
     'source': 'local',
     'cuda': args.cuda
      })
-helpLLM.load_model()
+helpLLM.load_model('How are you?')
 
 reprLLM = helpLLM.embedding
 
@@ -66,7 +66,7 @@ victimLLM = Llm_manager({
     'source': 'local',
     'cuda': args.cuda
     })
-victimLLM.load_model()
+victimLLM.load_model('How are you?')
 
 # we use Helper models as judgeLLM
 judgeLLM = helpLLM

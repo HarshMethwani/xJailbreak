@@ -21,7 +21,9 @@ class Llm_manager:
     def __init__(self, llm_info: dict):
         self.manager = ManageLLM()
         self.meta_info = llm_info
-        self.name = llm_info.get('model_name', llm_info['model_path'].split('/')[-1])
+        self.name = llm_info.get('model_name', None)
+        if self.name == None:
+            self.name = llm_info.get('model_path').split('/')[-1]
         self.source = 'api' if "api" in llm_info.keys() else 'local'
 
     def load_model(self, custom_prompt:str=None):

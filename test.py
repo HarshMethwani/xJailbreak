@@ -45,7 +45,7 @@ train_kwargs['val_max_step'] = 10  # How many times to iterate when verifying ea
 # * ------ model ------
 # Helper models must be able to override safety instructions, highly recommend https://huggingface.co/cooperleong00/Meta-Llama-3-8B-Instruct-Jailbroken
 helper_api = {
-    'model_path': 'huggingface/hub/llama/Meta-Llama-3-8B-Instruct-Jailbroken/'
+    'model_path': 'your_path/Meta-Llama-3-8B-Instruct-Jailbroken/'
 }
 helpLLM = Llm_manager(helper_api)
 helpLLM.load_model()
@@ -67,7 +67,7 @@ if args.target == 'qwen':
 elif args.target == 'llama':
     victim_api = {
         'model_name': 'llama',
-        'model_path': 'huggingface/hub/llama/'
+        'model_path': 'your_path...'
     }
     victimLLM = Llm_manager(victim_api)
 elif args.target == 'gpt':
@@ -75,7 +75,7 @@ elif args.target == 'gpt':
                   'api': 'sk-2233...',
                   'url': 'https:// ...'}
     victimLLM = Llm_manager(victim_api)
-victimLLM.load_model()
+victimLLM.load_model('How are you?')
 
 
 judgeLLM = helpLLM
