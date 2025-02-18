@@ -21,10 +21,11 @@ We deploy safety aligned LLM like [Qwen2.5-7B-Instruct](https://huggingface.co/Q
 We assume that you have a local model like llama, you can load it by
 
 ```python
-from agent.LLM_agent import Llm
+from agent.LLM_agent import Llm_manager
 helper_api = {
-    'model_name': 'Meta-Llama-3-8B-Instruct-Jailbroken',
-    'model_path': 'huggingface/hub/llama/Meta-Llama-3-8B-Instruct-Jailbroken/'
+    'model_name': 'Meta-Llama-3-8B-Instruct-Jailbroken',  # Not necessary for local model
+    'model_path': 'huggingface/hub/llama/Meta-Llama-3-8B-Instruct-Jailbroken/',
+    'cuda': 0,
 }
 helpLLM = Llm(helper_api)
 helpLLM.load_model()
@@ -33,9 +34,9 @@ helpLLM.load_model()
 You can call a LLM from API by:
 
 ```python
-from agent.LLM_agent import Llm
+from agent.LLM_agent import Llm_manager
 helper_api = {
-    'model_name': 'qwen',
+    'model_name': 'qwen',  # necessary for API model
     'api': 'sk-2233...',
     'url': 'https:// ...'
 }
@@ -67,12 +68,12 @@ We also recommend that you modify the `--cuda` parameter. After the attack is co
 
 ```
 @misc{lee2025xjailbreakrepresentationspaceguided,
-      title={xJailbreak: Representation Space Guided Reinforcement Learning for Interpretable LLM Jailbreaking}, 
+      title={xJailbreak: Representation Space Guided Reinforcement Learning for Interpretable LLM Jailbreaking},
       author={Sunbowen Lee and Shiwen Ni and Chi Wei and Shuaimin Li and Liyang Fan and Ahmadreza Argha and Hamid Alinejad-Rokny and Ruifeng Xu and Yicheng Gong and Min Yang},
       year={2025},
       eprint={2501.16727},
       archivePrefix={arXiv},
       primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2501.16727}, 
+      url={https://arxiv.org/abs/2501.16727},
 }
 ```
