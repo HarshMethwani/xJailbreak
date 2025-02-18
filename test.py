@@ -7,7 +7,7 @@ from utils.Evaluator import Evaluator
 from tqdm import trange
 from net import PolicyNet, ValueNet
 from data.Extraction import get_data_list
-from agent.LLM_agent import Llm
+from agent.LLM_agent import Llm_manager
 from jailbreak_env import JbEnv
 import warnings
 warnings.filterwarnings('ignore')
@@ -48,7 +48,7 @@ helper_api = {
     'model_name': 'Meta-Llama-3-8B-Instruct-Jailbroken',
     'model_path': 'huggingface/hub/llama/Meta-Llama-3-8B-Instruct-Jailbroken/'
 }
-helpLLM = Llm(helper_api)
+helpLLM = Llm_manager(helper_api)
 helpLLM.load_model()
 
 
@@ -64,18 +64,18 @@ if args.target == 'qwen':
     victim_api = {'model_name': 'qwen',
                   'api': 'sk-2233...',
                   'url': 'https:// ...'}
-    victimLLM = Llm(victim_api)
+    victimLLM = Llm_manager(victim_api)
 elif args.target == 'llama':
     victim_api = {
         'model_name': 'llama',
         'model_path': 'huggingface/hub/llama/'
     }
-    victimLLM = Llm(victim_api)
+    victimLLM = Llm_manager(victim_api)
 elif args.target == 'gpt':
     victim_api = {'model_name': 'gpt',
                   'api': 'sk-2233...',
                   'url': 'https:// ...'}
-    victimLLM = Llm(victim_api)
+    victimLLM = Llm_manager(victim_api)
 victimLLM.load_model()
 
 

@@ -9,7 +9,7 @@ from agent.RL import PPO
 from tqdm import trange
 from net import PolicyNet, ValueNet
 from data.Extraction import get_data_list
-from agent.LLM_agent import Llm
+from agent.LLM_agent import Llm_manager
 from jailbreak_env import JbEnv
 import warnings
 warnings.filterwarnings('ignore')
@@ -46,7 +46,7 @@ train_kwargs['val_max_step'] = 10  # How many times to iterate when verifying ea
 
 # * ------ Model ------
 # Helper models must be able to override safety instructions
-helpLLM = Llm({'name': 'Llama3-8B-Instruct-JB', 'source': 'local', 'cuda': args.cuda})
+helpLLM = Llm_manager({'name': 'Llama3-8B-Instruct-JB', 'source': 'local', 'cuda': args.cuda})
 helpLLM.load_model()
 
 reprLLM = helpLLM.embedding
@@ -57,7 +57,7 @@ env_kwargs['harmful_emb_refer'] = torch.load('data/preload/harmful_emb_refer.pt'
 env_kwargs['benign_emb_refer'] = torch.load('data/preload/benign_emb_refer.pt').to('cuda')
 
 # VictimLLM must be safety aligned
-victimLLM = Llm({'name': 'Qwen2.5-7B-Instruct', 'source': 'local', 'cuda': args.cuda})
+victimLLM = Llm_manager({'name': 'Qwen2.5-7B-Instruct', 'source': 'local', 'cuda': args.cuda})
 victimLLM.load_model()
 
 # we use Helper models as judgeLLM
