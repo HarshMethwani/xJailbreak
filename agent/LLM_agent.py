@@ -21,7 +21,7 @@ class Llm_manager:
     def __init__(self, llm_info: dict):
         self.manager = ManageLLM()
         self.meta_info = llm_info
-        self.name = llm_info['model_name']
+        self.name = llm_info.get('model_name', llm_info['model_path'].split('/')[-1])
         self.source = 'api' if "api" in llm_info.keys() else 'local'
 
     def load_model(self, custom_prompt:str=None):
@@ -86,7 +86,7 @@ class Llm_manager:
         return answer
 
     def embedding(self, text: str):
-        '''Return text embedding'''
+        '''Return text embedding, don't support bert-like model emb'''
         return self.manager.embedding(text)
 
     def generate(self, text: str) -> str:
@@ -187,6 +187,14 @@ class ManageLLM:
             reply.append(output[0]['generated_text'][len(prompts[i]):])
         return reply
 
+    def embedding(self, text: str|list):
+        '''embedding method for model like Llama or Qwen, not bert'''
+        self.pipeline.tokenizer.pad_token = self.pipeline.tokenizer.eos_token
+        input_ids = self.pipeline.tokenizer(text, return_tensors="pt", padding=True).input_ids.to('cuda')
+        new_outputs = self.pipeline.model(input_ids, output_hidden_states=True)
+        last_hidden_state = new_outputs.hidden_states[-1]
+        last_token_emb = last_hidden_state[:, -1, :]
+        return last_token_emb.detach()
 
 if __name__ == '__main__':
     manager = ManageLLM()

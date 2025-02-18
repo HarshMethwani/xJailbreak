@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='PPO Jailbreak LLM Mission')
 parser.add_argument('--note', default=None, type=str, help='Task notes')
 parser.add_argument('--special_place', default='train/xJailbreak-alpha0.2', help='Customize special saving location of experiment result, such as "log/special_place/..."')
 parser.add_argument('-w', '--save', type=int, default=0, help='data saving type, 0: not saved, 1: local')
-parser.add_argument('--cuda', nargs='+', default=[2], type=int, help='CUDA order')
+parser.add_argument('--cuda', nargs='+', default=[0], type=int, help='CUDA order')
 parser.add_argument('--episodes', default=0, type=int, help='The number of training data, if it is 0, all data will be trained')
 parser.add_argument('--val_interval', default=20, type=int, help='Verification interval, for pure training, it is recommended to set it larger to save time, 0 for no verify')
 parser.add_argument('--epochs', default=1, type=int, help='The number of rounds run on the whole dataset, at least 1')
@@ -46,7 +46,11 @@ train_kwargs['val_max_step'] = 10  # How many times to iterate when verifying ea
 
 # * ------ Model ------
 # Helper models must be able to override safety instructions
-helpLLM = Llm_manager({'name': 'Llama3-8B-Instruct-JB', 'source': 'local', 'cuda': args.cuda})
+helpLLM = Llm_manager({
+    'model_path': '/data/shared/users/lisunbowen/modelscope_cache/hub/Llama/Llama3-8B-Instruct-JB',
+    'source': 'local',
+    'cuda': args.cuda
+     })
 helpLLM.load_model()
 
 reprLLM = helpLLM.embedding
@@ -57,7 +61,11 @@ env_kwargs['harmful_emb_refer'] = torch.load('data/preload/harmful_emb_refer.pt'
 env_kwargs['benign_emb_refer'] = torch.load('data/preload/benign_emb_refer.pt').to('cuda')
 
 # VictimLLM must be safety aligned
-victimLLM = Llm_manager({'name': 'Qwen2.5-7B-Instruct', 'source': 'local', 'cuda': args.cuda})
+victimLLM = Llm_manager({
+    'model_path': '/data/shared/users/lisunbowen/modelscope_cache/hub/Llama/Qwen2.5-7B-Instruct',
+    'source': 'local',
+    'cuda': args.cuda
+    })
 victimLLM.load_model()
 
 # we use Helper models as judgeLLM
