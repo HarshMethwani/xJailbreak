@@ -68,7 +68,7 @@ We also recommend that you modify the `--cuda` parameter. After the attack is co
 
 ```
 @misc{lee2025xjailbreakrepresentationspaceguided,
-      title={xJailbreak: Representation Space Guided Reinforcement Learning for Interpretable LLM Jailbreaking},
+      title={{xJailbreak}: Representation Space Guided Reinforcement Learning for Interpretable LLM Jailbreaking},
       author={Sunbowen Lee and Shiwen Ni and Chi Wei and Shuaimin Li and Liyang Fan and Ahmadreza Argha and Hamid Alinejad-Rokny and Ruifeng Xu and Yicheng Gong and Min Yang},
       year={2025},
       eprint={2501.16727},
