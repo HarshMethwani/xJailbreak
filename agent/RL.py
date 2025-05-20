@@ -31,7 +31,7 @@ class PPO:
         probs = self.actor(state)
         action_dist = torch.distributions.Categorical(probs)
         action = action_dist.sample()
-        return action.item()
+        return action.item() if action.ndim == 0 else action[0].item()
 
     def update(self, transition_dict, **kargs):
         states = torch.tensor(transition_dict['states'], dtype=torch.float).to(self.device)
