@@ -22,7 +22,7 @@ parser.add_argument('--special_place', default='train/xJailbreak-alpha0.2', help
 parser.add_argument('-w', '--save', type=int, default=0, help='data saving type, 0: not saved, 1: local')
 parser.add_argument('--cuda', nargs='+', default=[0], type=int, help='CUDA order')
 parser.add_argument('--episodes', default=0, type=int, help='The number of training data, if it is 0, all data will be trained')
-parser.add_argument('--val_interval', default=20, type=int, help='Verification interval, for pure training, it is recommended to set it larger to save time, 0 for no verify')
+parser.add_argument('--val_interval', default=0, type=int, help='Verification interval, for pure training, it is recommended to set it larger to save time, 0 for no verify')
 parser.add_argument('--epochs', default=1, type=int, help='The number of rounds run on the whole dataset, at least 1')
 parser.add_argument('-s', '--seed', nargs='+', default=[42, 42], type=int, help='The start and end seeds, if there are multiple seeds, each seed runs the epochs sub-data set, which is equivalent to the product relationship')
 args = parser.parse_args()
@@ -47,7 +47,7 @@ train_kwargs['val_max_step'] = 10  # How many times to iterate when verifying ea
 # * ------ Model ------
 # Helper models must be able to override safety instructions
 helpLLM = Llm_manager({
-    'model_path': 'your_path.../Llama3-8B-Instruct-JB/',
+    'model_path': './Meta-Llama-3-8B-Instruct-Jailbroken/',
     'source': 'local',
     'cuda': args.cuda
      })
@@ -62,7 +62,7 @@ env_kwargs['benign_emb_refer'] = torch.load('data/preload/benign_emb_refer.pt').
 
 # VictimLLM must be safety aligned
 victimLLM = Llm_manager({
-    'model_path': 'your_path.../Qwen2.5-7B-Instruct/',
+    'model_path': './Qwen2.5-7B-Instruct/',
     'source': 'local',
     'cuda': args.cuda
     })
