@@ -66,7 +66,7 @@ if args.target == 'qwen':
     victimLLM = Llm_manager(victim_api)
 elif args.target == 'llama':
     victim_api = {
-        'model_path': './Mistral-7B-Instruct-v0.2 /'
+        'model_path': './Mistral-7B-Instruct-v0.2/'
     }
     victimLLM = Llm_manager(victim_api)
 elif args.target == 'gpt':
