@@ -99,6 +99,7 @@ def train_PPO_agent(
                 print(tabulate(val_info.items(), headers=['Metrics', 'Value'], tablefmt='pretty'))
                 evaluator.val_save(save_flag, seed, val_info, None)
                 evaluator.print_col()
+            print(f"Done episode: {episode}")
 
     env.close()
     total_time = time.time() - start_time
