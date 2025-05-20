@@ -173,6 +173,9 @@ class ManageLLM:
             ]
         elif 'Qwen' in self.model_name or 'qwen' in self.model_name:
             terminators = self.pipeline.tokenizer.eos_token_id
+        else:
+            # Fallback for unknown models
+            terminators = [self.pipeline.tokenizer.eos_token_id]
 
         outputs = self.pipeline(
             prompts,
